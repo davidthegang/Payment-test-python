@@ -43,7 +43,9 @@ cd backend
 
 (Or activate first: `.\venv\Scripts\Activate.ps1` then just `python app.py`)
 
-API runs on **http://localhost:5000**
+API runs on **http://localhost:5000** (local)
+
+In production your backend is at **https://payment-test-python.onrender.com** (and must have `BAKONG_TOKEN` + proper CORS for the frontend at https://payment-test-python.vercel.app)
 
 > **Important**: Keep this server running. The React frontend (port 5173) uses a dev proxy to talk to this API. If the backend is not running you will see `ECONNREFUSED` proxy errors in the Vite terminal.
 

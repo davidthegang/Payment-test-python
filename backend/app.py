@@ -8,9 +8,36 @@ load_dotenv()
 BAKONG_TOKEN = os.getenv('BAKONG_TOKEN', '')
 
 app = Flask(__name__)
-# CORS: allow local dev + Vercel deploys (for production frontend on Vercel + this backend).
-# If you deploy the frontend to a custom domain, add it here (or use env var for flexibility).
-CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://*.vercel.app"])
+
+# CORS configuration for local dev + Vercel frontend deploys.
+# Your current setup:
+#   Frontend (production): https://payment-test-python.vercel.app
+#   Frontend (current preview): https://payment-test-python-5ta8t2lop-lorndavids-projects.vercel.app
+#   Backend: https://payment-test-python.onrender.com
+#
+# We list exact matches for your known frontends + a regex catch-all.
+# You can also override/extend via CORS_ORIGINS env var on Render.
+CORS_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://payment-test-python.vercel.app",  # your main Vercel frontend
+    "https://payment-test-python-5ta8t2lop-lorndavids-projects.vercel.app",  # current preview/deployment slug from logs
+    r"https://.*\.vercel\.app$",   # catch-all for any other vercel previews or future deploys
+]
+env_origins = os.getenv("CORS_ORIGINS", "")
+if env_origins:
+    CORS_ORIGINS.extend([o.strip() for o in env_origins.split(",") if o.strip()])
+
+CORS(app, origins=CORS_ORIGINS)
+
+@app.route('/', methods=['GET', 'HEAD'])
+def index():
+    return jsonify({
+        'status': 'ok',
+        'message': 'Bakong KHQR backend is running',
+        'endpoints': ['/health', '/api/khqr (POST)', '/api/check-payment/<md5> (POST)'],
+        'frontend': 'https://payment-test-python.vercel.app'
+    })
 
 @app.route('/health', methods=['GET'])
 def health():

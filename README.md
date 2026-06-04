@@ -107,10 +107,18 @@ The form page now includes:
 3. Backend uses the token + MD5 for `khqr.check_payment(md5)` automatically (see app.py).
 4. Frontend polls `/api/check-payment/<md5>` (no secrets sent to browser).
 
-**For production deploys** (Vercel frontend + Render/etc backend):
-- Set the `VITE_API_URL` environment variable on your frontend hosting to your backend's public URL.
-- This ensures the auto MD5 polling works (the generate call and health checks already use it; polling now does too).
-- See DEPLOY.md for full steps. Without it, auto-checking is disabled in production (manual pay via QR still works).
+**For your current production deploys**:
+- Backend:  https://payment-test-python.onrender.com
+- Frontend: https://payment-test-python.vercel.app/
+
+- On **Vercel** (frontend) set environment variable:
+  `VITE_API_URL=https://payment-test-python.onrender.com`
+- On **Render** (backend) set:
+  `BAKONG_TOKEN=707da48709e943a9744d086ce60b72f4d3319156746b6a5e54456918f29c77b6`
+  `CORS_ORIGINS=https://payment-test-python.vercel.app,https://payment-test-python-5ta8t2lop-lorndavids-projects.vercel.app`   (include preview slugs from your Render logs)
+
+- This makes the auto MD5 payment polling work in production. See DEPLOY.md for the full step-by-step + troubleshooting for the CORS error you saw.
+- Without the Vercel env var, auto-checking (and even the backend status indicator) will be broken in prod. Manual QR pay still works.
 
 ## Notes
 
