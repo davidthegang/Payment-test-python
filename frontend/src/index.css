@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Keep some project base styles */
+:root {
+  font-family: 'Roboto', 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f0f2f5;
+}
+
+#root {
+  min-height: 100vh;
+}
