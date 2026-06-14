@@ -1,196 +1,26 @@
-/* ====================== GLOBAL / APP ====================== */
+/* ====================== APP LAYOUT ====================== */
 .app-root {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   background: #f0f2f5;
-  font-family: 'Roboto', 'Segoe UI', sans-serif;
+  font-family: 'Battambang', 'Segoe UI', sans-serif;
   box-sizing: border-box;
 }
 
-/* Form is centered in the viewport */
-.app-root.form-mode {
+/* Form mode - centered in viewport */
+.app-root:not(.payment-mode) {
   align-items: center;
   padding: 20px;
 }
 
-/* Support original ABA PayWay bottom-sheet style for production KHQR look */
+/* Payment mode - bottom sheet style */
 .app-root.payment-mode {
   align-items: flex-end;
   padding: 0;
-  padding-bottom: 0;
 }
 
-@media (max-width: 480px) {
-  .app-root.payment-mode {
-    padding: 0;
-  }
-}
-
-/* ====================== FORM PAGE ====================== */
-.form-container {
-  width: 100%;
-  max-width: 360px;
-  padding-left: 8px;
-  padding-right: 8px;
-}
-
-@media (min-width: 400px) {
-  .form-container {
-    padding-left: 0;
-    padding-right: 0;
-  }
-}
-
-.khqr-form {
-  width: 100%;
-  padding: 24px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-}
-
-.form-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #111;
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-.khqr-form label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 4px;
-  margin-top: 14px;
-}
-
-.khqr-form input,
-.khqr-form select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 15px;
-  outline: none;
-  box-sizing: border-box;
-  background: #fff;
-}
-
-.khqr-form input:focus,
-.khqr-form select:focus {
-  border-color: #0bbcd4;
-}
-
-.khqr-form .token-hint {
-  color: #999;
-  font-weight: 400;
-}
-
-.khqr-form button {
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 6px;
-  background: rgb(226, 26, 26);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 18px;
-  transition: background 0.2s;
-}
-
-.khqr-form button:hover:not(:disabled) {
-  background: rgb(200, 20, 20);
-}
-
-.khqr-form button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.form-error {
-  margin-top: 12px;
-  padding: 10px 12px;
-  background: #fee2e2;
-  color: #b91c1c;
-  border-radius: 6px;
-  font-size: 14px;
-  white-space: pre-line;
-}
-
-.backend-note {
-  margin-top: 16px;
-  padding: 10px 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 12px;
-  color: #475569;
-  text-align: center;
-  line-height: 1.4;
-}
-
-.backend-note code {
-  font-family: ui-monospace, monospace;
-  background: #e0e7ff;
-  color: #3730a3;
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-size: 11px;
-}
-
-/* Live backend status indicator */
-.backend-status {
-  margin: -4px 0 12px;
-  font-size: 12px;
-  color: #64748b;
-  text-align: center;
-}
-
-.backend-status .ok {
-  color: #16a34a;
-  font-weight: 600;
-}
-
-.backend-status .down {
-  color: #dc2626;
-  font-weight: 600;
-}
-
-.backend-status .checking {
-  color: #64748b;
-  font-style: italic;
-}
-
-.retry-btn {
-  margin-left: 8px;
-  font-size: 11px;
-  padding: 1px 7px;
-  border: 1px solid #64748b;
-  background: transparent;
-  color: #64748b;
-  border-radius: 4px;
-  cursor: pointer;
-  vertical-align: middle;
-}
-
-.retry-btn:hover {
-  background: #f1f5f9;
-  border-color: #475569;
-}
-
-/* Advanced KHQR QR scan line animation (subtle moving scan effect) */
-@keyframes scan {
-  0% { transform: translateY(10px); opacity: 0.6; }
-  50% { opacity: 0.9; }
-  100% { transform: translateY(240px); opacity: 0.6; }
-}
-
-/* ====================== ORIGINAL ABA PAYWAY KHQR PANEL (for production-like look) ====================== */
+/* ====================== AUTHENTIC KHQR PANEL ====================== */
 .khqr-panel {
   width: 100%;
   max-width: 440px;
@@ -198,7 +28,6 @@
   border-radius: 15px 15px 0 0;
   box-shadow: 0 0 10px rgba(0,0,0,0.15);
   overflow: hidden;
-  font-family: 'Roboto', 'Segoe UI', sans-serif;
   animation: slideUp 0.35s ease;
   margin: 0 auto;
 }
@@ -208,9 +37,7 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-.khqr-main,
-.expired-state,
-.success-state {
+.khqr-main {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -219,8 +46,50 @@
   position: relative;
 }
 
+/* Timer badge - top right of card */
+.khqr-timer-badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.9);
+}
+
+.khqr-timer-badge.urgent {
+  color: #ff6b6b;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.khqr-timer-badge svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.khqr-timer-text {
+  position: relative;
+  font-family: ui-monospace, monospace;
+  font-size: 8px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1;
+  z-index: 1;
+  letter-spacing: 0.3px;
+}
+
+/* ====================== HEADER ====================== */
 .khqr-header-bar {
-  background: rgb(226, 26, 26);
+  background: rgb(226,26,26);
   height: 32px;
   display: flex;
   align-items: center;
@@ -231,12 +100,13 @@
 .khqr-header-bar .bar-handle {
   width: 36px;
   height: 3px;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255,255,255,0.8);
   border-radius: 10px;
 }
 
+/* ====================== LOGO AREA ====================== */
 .khqr-logo-area {
-  background: rgb(226, 26, 26);
+  background: rgb(226,26,26);
   height: 32px;
   display: flex;
   align-items: flex-start;
@@ -249,6 +119,7 @@
   max-width: 70px;
 }
 
+/* ====================== CORNER TRIANGLE ====================== */
 .khqr-corner {
   display: flex;
   justify-content: flex-end;
@@ -259,9 +130,10 @@
   width: 0;
   height: 0;
   border-left: 14px solid transparent;
-  border-top: 14px solid rgb(226, 26, 26);
+  border-top: 14px solid rgb(226,26,26);
 }
 
+/* ====================== MERCHANT INFO ====================== */
 .khqr-merchant {
   display: flex;
   justify-content: center;
@@ -284,7 +156,7 @@
 .khqr-merchant .info .price-wrap {
   font-size: 21px;
   font-weight: 700;
-  color: rgb(8, 27, 55);
+  color: rgb(8,27,55);
   position: relative;
 }
 
@@ -296,6 +168,7 @@
   margin-left: 11px;
 }
 
+/* ====================== DIVIDER ====================== */
 .khqr-divider {
   background-image: url('https://checkout.payway.com.kh/images/line-divider.svg');
   height: 1px;
@@ -307,6 +180,7 @@
   flex-shrink: 0;
 }
 
+/* ====================== QR AREA ====================== */
 .khqr-qr-area {
   display: flex;
   justify-content: center;
@@ -317,25 +191,117 @@
 
 .khqr-qr-area .qr-wrap {
   position: relative;
-  width: 280px;
-  height: 280px;
+  width: 220px;
+  height: 220px;
 }
 
 .khqr-qr-area .qr-wrap canvas {
   display: block;
-  image-rendering: pixelated; /* keep modules crisp */
+  image-rendering: pixelated;
 }
 
-/* Expired & Success shared */
-.expired-state,
-.success-state {
+.khqr-qr-area .qr-wrap .qr-logo-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  width: 48px;
+  height: 48px;
+  pointer-events: none;
+}
+
+/* ====================== BOTTOM AREA ====================== */
+.khqr-bottom {
+  margin-top: 12px;
+  margin-bottom: 26px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.khqr-bottom .scan-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(8,27,55);
+}
+
+.khqr-bottom .or-text {
+  color: rgb(8,27,55);
+  margin: 4px 0;
+}
+
+.khqr-bottom .dl-btn-wrap {
+  margin-top: 14px;
+}
+
+.khqr-bottom .dl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  gap: 8px;
+  padding: 4px;
+  transition: opacity 0.2s;
+}
+
+.khqr-bottom .dl-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.khqr-bottom .dl-btn:not(:disabled):hover {
+  opacity: 0.8;
+}
+
+.khqr-bottom .dl-btn img {
+  width: 20px;
+  height: 20px;
+}
+
+.khqr-bottom .dl-btn span {
+  color: #06b6d4;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.khqr-bottom .hint-text {
+  font-size: 14px;
+  color: #aaa;
+  line-height: 18px;
+  max-width: 300px;
+  margin: 8px auto 0;
+}
+
+.khqr-bottom .cancel-link {
+  display: block;
+  margin: 14px auto 0;
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  opacity: 0.9;
+}
+
+.khqr-bottom .cancel-link:hover {
+  opacity: 1;
+  color: #b91c1c;
+}
+
+/* ====================== EXPIRED STATE ====================== */
+.expired-state {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   min-height: 400px;
   background: #fff;
   overflow: hidden;
 }
 
-.expired-state .img-area,
-.success-state .img-area {
+.expired-state .img-area {
   position: relative;
   width: 100%;
   height: 220px;
@@ -346,8 +312,7 @@
   flex-shrink: 0;
 }
 
-.expired-state .img-area img,
-.success-state .img-area img {
+.expired-state .img-area img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -355,8 +320,7 @@
   object-fit: cover;
 }
 
-.expired-state .img-area .handle,
-.success-state .img-area .handle {
+.expired-state .img-area .handle {
   position: absolute;
   top: 0;
   left: 0;
@@ -366,8 +330,7 @@
   padding-top: 10px;
 }
 
-.expired-state .img-area .handle div,
-.success-state .img-area .handle div {
+.expired-state .img-area .handle div {
   width: 40px;
   height: 4px;
   background: #bbb;
@@ -384,7 +347,7 @@
   aspect-ratio: 1;
   border-radius: 50%;
   background: #d0d0d0;
-  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 2px 4px rgba(255,255,255,.4);
 }
 
 .clock::after {
@@ -434,21 +397,18 @@
   to { transform: rotate(360deg); }
 }
 
-.expired-content,
-.success-content {
+.expired-content {
   padding: 28px 24px;
   text-align: center;
 }
 
-.expired-content h2,
-.success-content h2 {
+.expired-content h2 {
   font-size: 16px;
   color: #0b1b33;
   margin-bottom: 6px;
 }
 
-.expired-content p,
-.success-content p {
+.expired-content p {
   font-size: 12px;
   color: #6b7280;
 }
@@ -479,6 +439,52 @@
   background: #09a8be;
 }
 
+/* ====================== SUCCESS STATE ====================== */
+.success-state {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 400px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.success-state .img-area {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.success-state .img-area img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.success-state .img-area .handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+}
+
+.success-state .img-area .handle div {
+  width: 40px;
+  height: 4px;
+  background: #bbb;
+  border-radius: 10px;
+}
+
 /* Checkmark animation */
 .checkmark-wrap {
   position: absolute;
@@ -505,7 +511,7 @@
   stroke-dasharray: 166;
   stroke-dashoffset: 166;
   fill: none;
-  animation: checkStroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+  animation: checkStroke 0.6s cubic-bezier(.65,0,.45,1) forwards;
 }
 
 .checkmark__check {
@@ -515,7 +521,7 @@
   stroke-linejoin: round;
   stroke-dasharray: 48;
   stroke-dashoffset: 48;
-  animation: checkStroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+  animation: checkStroke .3s cubic-bezier(.65,0,.45,1) .8s forwards;
 }
 
 @keyframes checkStroke {
@@ -523,8 +529,7 @@
 }
 
 .zoom-check {
-  animation: checkFill 0.4s ease-in-out 0.4s forwards,
-    checkScale 0.3s ease-in-out 0.9s both, zoomInOut 2s ease 0.9s infinite;
+  animation: checkFill .4s ease-in-out .4s forwards, checkScale .3s ease-in-out .9s both, zoomInOut 2s ease .9s infinite;
 }
 
 @keyframes checkFill {
@@ -539,6 +544,22 @@
 @keyframes zoomInOut {
   0%, 100% { transform: translate(-50%, -50%) scale(1); }
   50% { transform: translate(-50%, -50%) scale(1.04); }
+}
+
+.success-content {
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.success-content h2 {
+  font-size: 16px;
+  color: #0b1b33;
+  margin-bottom: 6px;
+}
+
+.success-content p {
+  font-size: 12px;
+  color: #6b7280;
 }
 
 .success-btn-area {
@@ -583,165 +604,20 @@
   background: #09a8be;
 }
 
-/* Bottom area */
-.khqr-bottom {
-  margin-top: 12px;
-  margin-bottom: 26px;
-  text-align: center;
-  flex-shrink: 0;
+/* ====================== MISC ====================== */
+/* Remove number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
 }
 
-.khqr-bottom .scan-text {
-  font-size: 14px;
-  font-weight: 600;
-  color: rgb(8, 27, 55);
-}
-
-.khqr-bottom .or-text {
-  color: rgb(8, 27, 55);
-  margin: 4px 0;
-}
-
-.khqr-bottom .dl-btn-wrap {
-  margin-top: 14px;
-}
-
-.khqr-bottom .dl-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  gap: 8px;
-  padding: 4px;
-}
-
-.khqr-bottom .dl-btn img {
-  width: 20px;
-  height: 20px;
-}
-
-.khqr-bottom .dl-btn span {
-  color: #06b6d4;
-  font-weight: 500;
-  font-size: 14px;
-}
-
-.khqr-bottom .hint-text {
-  font-size: 14px;
-  color: #aaa;
-  line-height: 18px;
-  max-width: 300px;
-  margin: 8px auto 0;
-}
-
-.khqr-bottom .cancel-link {
-  display: block;
-  margin: 14px auto 0;
-  background: none;
-  border: none;
-  color: #dc2626;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
-  opacity: 0.9;
-}
-
-.khqr-bottom .cancel-link:hover {
-  opacity: 1;
-  color: #b91c1c;
-}
-
-/* Live expiry countdown for active state */
-.khqr-expiry-timer {
-  text-align: center;
-  margin: 4px 0 8px;
-  font-size: 13px;
-  color: #b45309;
-  font-weight: 500;
-}
-
-.khqr-expiry-timer .expiry-time {
-  font-family: ui-monospace, monospace;
-  font-size: 15px;
-  font-weight: 700;
-  background: #fef3c7;
-  padding: 1px 6px;
-  border-radius: 4px;
-  color: #92400e;
-  letter-spacing: 0.5px;
-}
-
-.khqr-expiry-timer.urgent {
-  color: #dc2626;
-}
-
-.khqr-expiry-timer.urgent .expiry-time {
-  background: #fee2e2;
-  color: #b91c1c;
-  animation: pulse 1s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-/* New circular timer card - white bg, positioned top right of the KHQR card */
-.khqr-timer-circle-card {
-  position: absolute;
-  top: 52px; /* below the red header/logo area */
-  right: 12px;
-  z-index: 10;
-  background: #ffffff;
-  border-radius: 9999px;
-  padding: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  border: 1px solid #f3f4f6;
-}
-
-@media (max-width: 380px) {
-  .khqr-timer-circle-card {
-    top: 48px;
-    right: 8px;
-    padding: 3px;
-    transform: scale(0.88);
-    transform-origin: top right;
+/* Override for mobile: full width panel */
+@media (max-width: 440px) {
+  .khqr-panel {
+    border-radius: 0;
   }
-}
-
-.khqr-timer-circle {
-  position: relative;
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.khqr-timer-circle svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.khqr-timer-text {
-  position: relative;
-  font-family: ui-monospace, monospace;
-  font-size: 9px;
-  font-weight: 700;
-  color: #111827;
-  text-align: center;
-  line-height: 0.95;
-  z-index: 1;
-}
-
-.khqr-timer-text .khqr-timer-unit {
-  font-size: 6px;
-  font-weight: 600;
-  color: #6b7280;
-  display: inline-block;
-  margin-left: 1px;
 }

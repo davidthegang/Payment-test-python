@@ -2,73 +2,59 @@ import { useEffect, useState, useRef } from 'react';
 import QRCode from 'qrcode';
 import axios from 'axios';
 import html2canvas from 'html2canvas';
-import { AlertTriangle, X, Download } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
-export default function KHQRDisplay({ data, onReset, error: externalError, apiBase = '' }) {
-  const { 
-    qr_string, 
-    amount, 
-    currency, 
-    merchant_name, 
-    md5, 
+export default function KHQRDisplay({ data, onReset, error: externalError, apiBase = '', lang = 'en', t = () => {} }) {
+  const {
+    qr_string,
+    amount,
+    currency,
+    merchant_name,
+    md5,
     expiry_minutes = 3,
-    account = '',
-    qr_image = null   // optional official safe image from backend (data URI)
   } = data || {};
 
   const [status, setStatus] = useState('active');
   const initialSeconds = (Number(expiry_minutes) || 3) * 60;
   const [timeLeft, setTimeLeft] = useState(initialSeconds);
-  const [copied, setCopied] = useState(false);
-  const [isLowTime, setIsLowTime] = useState(false);
   const [internalError, setInternalError] = useState(null);
+  const [downloading, setDownloading] = useState(false);
 
   const displayError = externalError || internalError;
 
   const qrRef = useRef(null);
   const pollRef = useRef(null);
   const timerRef = useRef(null);
+  const isLowTimeRef = useRef(false);
 
   useEffect(() => {
     if (!qr_string) return;
 
-    // Generate QR Code - high reliability settings for bank scanners
-    // Larger size + High EC level + proper quiet zone (margin) = much more scannable
     QRCode.toCanvas(qrRef.current, qr_string, {
-      width: 280,
-      margin: 4,
+      width: 220,
+      margin: 2,
       color: { dark: '#000000', light: '#ffffff' },
-      errorCorrectionLevel: 'H'
+      errorCorrectionLevel: 'M',
     }).catch((err) => {
       console.error(err);
-      setInternalError('Failed to render QR code. Please try again.');
+      setInternalError('Failed to render QR code.');
     });
 
-    // Live Countdown for 3 minutes (or configured)
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         const next = prev - 1;
-        
         if (next <= 0) {
           clearInterval(timerRef.current);
           if (pollRef.current) clearInterval(pollRef.current);
           setStatus('expired');
           return 0;
         }
-        
-        if (next <= 30 && !isLowTime) {
-          setIsLowTime(true);
+        if (next <= 30 && !isLowTimeRef.current) {
+          isLowTimeRef.current = true;
         }
-        
         return next;
       });
     }, 1000);
 
-    // Polling for auto payment detection (uses backend BAKONG_TOKEN from .env for security)
-    // Always attempts when md5 present — no token sent from client.
-    // Uses apiBase (from VITE_API_URL) so this works in production deploys
-    // (Vercel frontend + separate backend) where there is no Vite dev proxy.
     if (md5) {
       pollRef.current = setInterval(async () => {
         try {
@@ -78,8 +64,8 @@ export default function KHQRDisplay({ data, onReset, error: externalError, apiBa
             clearInterval(pollRef.current);
             clearInterval(timerRef.current);
           }
-        } catch (err) {
-          // silent - user can still scan manually
+        } catch {
+          // silent
         }
       }, 4000);
     }
@@ -88,57 +74,112 @@ export default function KHQRDisplay({ data, onReset, error: externalError, apiBa
       if (timerRef.current) clearInterval(timerRef.current);
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [qr_string, md5]);
+  }, [qr_string, md5, apiBase]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
-  const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
   const displayAmount = Number(amount || 0).toFixed(2);
+  const isLowTime = isLowTimeRef.current;
 
-  const handleDownloadQR = async () => {
+  // Download the entire KHQR card as a clean image (header + logo + merchant + amount + QR)
+  const handleDownloadCard = async () => {
     if (!qr_string) return;
+    setDownloading(true);
+
     try {
-      // Always generate a high-resolution, clean, bank-scanner-friendly QR code.
-      // No logo overlays, high error correction, generous quiet zone.
-      const dataUrl = await QRCode.toDataURL(qr_string, {
-        width: 640,
+      // Generate a fresh high-res QR code for the download
+      const qrDataUrl = await QRCode.toDataURL(qr_string, {
+        width: 440,
         margin: 4,
         color: { dark: '#000000', light: '#ffffff' },
-        errorCorrectionLevel: 'H'
+        errorCorrectionLevel: 'M',
       });
+
+      // Clone the visible panel for pixel-perfect capture with all CSS styles
+      const originalPanel = document.getElementById('stateKHQR');
+      if (!originalPanel) throw new Error('Panel not found');
+
+      const clone = originalPanel.cloneNode(true);
+      clone.id = 'khqr-clone-for-download';
+
+      // Remove unwanted elements from clone: timer badge, bottom controls
+      const timerBadge = clone.querySelector('.khqr-timer-badge');
+      if (timerBadge) timerBadge.remove();
+
+      const bottomArea = clone.querySelector('.khqr-bottom');
+      if (bottomArea) {
+        // Keep only scan-text in bottom area, remove interactive elements
+        const scanTextClone = bottomArea.querySelector('.scan-text')?.cloneNode(true);
+        bottomArea.innerHTML = '';
+        if (scanTextClone) bottomArea.appendChild(scanTextClone);
+      }
+
+      // Replace the QR canvas with a high-res image version
+      const qrWrap = clone.querySelector('.qr-wrap');
+      if (qrWrap) {
+        const oldCanvas = qrWrap.querySelector('canvas');
+        if (oldCanvas) oldCanvas.remove();
+
+        const qrImg = document.createElement('img');
+        qrImg.src = qrDataUrl;
+        qrImg.style.cssText = 'display: block; width: 220px; height: 220px; image-rendering: pixelated;';
+        qrImg.crossOrigin = 'anonymous';
+        qrWrap.insertBefore(qrImg, qrWrap.firstChild);
+      }
+
+      // Set clone styles for offscreen rendering using the actual panel width
+      const actualWidth = originalPanel.offsetWidth || 400;
+      clone.style.cssText = `
+        width: ${actualWidth}px;
+        position: fixed;
+        left: -9999px;
+        top: 0;
+        border-radius: 0;
+        background: #fff;
+      `;
+
+      document.body.appendChild(clone);
+
+      // Wait for external images to load
+      const imgs = clone.querySelectorAll('img');
+      await Promise.all(Array.from(imgs).map(img => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      }));
+
+      // Small layout settle delay
+      await new Promise(r => setTimeout(r, 150));
+
+      const canvas = await html2canvas(clone, {
+        scale: 3,
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+      });
+
+      document.body.removeChild(clone);
+
       const link = document.createElement('a');
       const safeName = (merchant_name || 'payment').toLowerCase().replace(/\s+/g, '-');
       link.download = `khqr-${safeName}-${currency}.png`;
-      link.href = dataUrl;
+      link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (e) {
-      console.error('High-res QR download failed, falling back', e);
-      // Fallback to whatever is on screen (still better than before)
+      console.error('Card download failed, falling back to QR canvas', e);
+      // Fallback: download the QR canvas only
       if (qrRef.current) {
         const link = document.createElement('a');
-        link.download = `khqr-${(merchant_name || 'payment').toLowerCase().replace(/\s+/g, '-')}.png`;
+        const safeName = (merchant_name || 'payment').toLowerCase().replace(/\s+/g, '-');
+        link.download = `khqr-${safeName}-${currency}.png`;
         link.href = qrRef.current.toDataURL('image/png');
         link.click();
       }
-    }
-  };
-
-  const handleCopy = async () => {
-    if (!qr_string) return;
-    try {
-      await navigator.clipboard.writeText(qr_string);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch (e) {
-      const ta = document.createElement('textarea');
-      ta.value = qr_string;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -148,28 +189,7 @@ export default function KHQRDisplay({ data, onReset, error: externalError, apiBa
     onReset?.();
   };
 
-  // Download the entire KHQR card as high-quality PNG image (for sharing/printing)
-  const handleDownloadCardImage = async () => {
-    const panel = document.getElementById('khqrPanel');
-    if (!panel) return;
-
-    try {
-      const canvas = await html2canvas(panel, {
-        scale: 3, // higher quality for crisp QR when printed or uploaded
-        backgroundColor: '#f0f2f5',
-        logging: false,
-      });
-      const link = document.createElement('a');
-      link.download = `khqr-donation-${(merchant_name || 'support').toLowerCase().replace(/\s+/g, '-')}-${currency}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    } catch (err) {
-      console.error('Failed to capture card image', err);
-      alert('Could not generate image. Please try the Download QR button instead.');
-    }
-  };
-
-  // SUCCESS STATE - original style with advanced polish
+  // ─── SUCCESS STATE ───
   if (status === 'success') {
     return (
       <div className="khqr-panel" id="khqrPanel">
@@ -179,26 +199,30 @@ export default function KHQRDisplay({ data, onReset, error: externalError, apiBa
             <div className="handle"><div></div></div>
             <div className="checkmark-wrap zoom-check">
               <svg className="checkmark" viewBox="0 0 52 52">
-                <circle className="checkmark__circle" cx="26" cy="26" r="25" fill="none"></circle>
-                <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"></path>
-                <path className="checkmark__check" fill="none" fillRule="evenodd" clipRule="evenodd" d="M14.1 27.2l7.1 7.2 16.7-16.8"></path>
+                <circle className="checkmark__circle" cx="26" cy="26" r="25" fill="none" />
+                <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                <path className="checkmark__check" fill="none" fillRule="evenodd" clipRule="evenodd" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
               </svg>
             </div>
           </div>
           <div className="success-content">
-            <h2>Success</h2>
-            <p>Payment received successfully.</p>
+            <h2 className={lang === 'km' ? 'font-moul' : ''}>{t('khqr.success')}</h2>
+            <p>{t('khqr.successMsg')}</p>
           </div>
           <div className="success-btn-area">
-            <button className="btn-outline" onClick={handleDownloadQR}>Download Receipt</button>
-            <button className="btn-solid" onClick={handleCancel}>Continue Shopping</button>
+            <button className="btn-outline" onClick={handleDownloadCard}>
+              {lang === 'km' ? 'ទាញយករូបភាព' : 'Download Receipt'}
+            </button>
+            <button className="btn-solid" onClick={handleCancel}>
+              {t('khqr.newPayment')}
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // EXPIRED STATE - original with clock
+  // ─── EXPIRED STATE ───
   if (status === 'expired') {
     return (
       <div className="khqr-panel" id="khqrPanel">
@@ -212,137 +236,114 @@ export default function KHQRDisplay({ data, onReset, error: externalError, apiBa
             </div>
           </div>
           <div className="expired-content">
-            <h2>Session Expired</h2>
-            <p>Press <span className="bold">Try Again</span> to resume transaction.</p>
+            <h2 className={lang === 'km' ? 'font-moul' : ''}>{t('khqr.expired')}</h2>
+            <p>{lang === 'km' ? (
+              <>ចុច <span className="bold">{t('khqr.tryAgain')}</span> ដើម្បីបន្តប្រតិបត្តិការ</>
+            ) : (
+              <>Press <span className="bold">{t('khqr.tryAgain')}</span> to resume transaction.</>
+            )}</p>
           </div>
           <div className="error-btn-area">
-            <button className="error-btn" onClick={handleCancel}>Try Again</button>
+            <button className="error-btn" onClick={handleCancel}>{t('khqr.tryAgain')}</button>
           </div>
         </div>
       </div>
     );
   }
 
-  // ACTIVE STATE - exact production ABA PayWay KHQR look + expire features
+  // ─── ACTIVE STATE ───
   return (
-    <div className="khqr-panel" id="khqrPanel">
-      {/* Error banner */}
-      <AnimatePresence>
+    <>
+      <div className="khqr-panel" id="khqrPanel">
+        {/* Error Banner */}
         {displayError && (
-          <div className="bg-red-100 border-b border-red-200 px-4 py-2 text-sm text-red-700 flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <div className="flex-1">{displayError}</div>
-            <button onClick={() => setInternalError(null)} className="text-red-500 hover:text-red-700">×</button>
+          <div className="flex items-start gap-2 px-4 py-3 bg-red-50 border-b border-red-200 text-sm text-red-700">
+            <span className="mt-0.5">⚠️</span>
+            <span className="flex-1">{displayError}</span>
+            <button onClick={() => setInternalError(null)} className="text-red-400 hover:text-red-600">×</button>
           </div>
         )}
-      </AnimatePresence>
-
-      <div className="khqr-main" id="stateKHQR">
-        <div className="khqr-header-bar">
-          <div className="bar-handle"></div>
-        </div>
-        <div className="khqr-logo-area">
-          <img src="https://checkout.payway.com.kh/images/khqr-icon.svg" alt="KHQR" />
-        </div>
-        <div className="khqr-corner">
-          <div className="corner-triangle"></div>
-        </div>
-
-        <div className="khqr-merchant">
-          <div className="info">
-            <div className="store-name" id="merchantName">{merchant_name}</div>
-            <div className="price-wrap">
-              <span id="priceDisplay">{displayAmount}</span>
-              <span className="price-usd" id="currencyDisplay">{currency}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Live countdown timer (top-right of the KHQR card) */}
-        <div className="khqr-timer-circle-card">
-          <div className="khqr-timer-circle">
-            <svg width="52" height="52" viewBox="0 0 52 52">
-              {/* Background circle */}
+        <div className="khqr-main" id="stateKHQR">
+          {/* Timer badge */}
+          <div className={`khqr-timer-badge ${isLowTime ? 'urgent' : ''}`}>
+            <svg width="40" height="40" viewBox="0 0 40 40">
+              <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="3" />
               <circle
-                cx="26" cy="26" r="23"
+                cx="20" cy="20" r="17"
                 fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="5"
-              />
-              {/* Progress circle - fills to full circle over 3 minutes (elapsed time) */}
-              <circle
-                cx="26" cy="26" r="23"
-                fill="none"
-                stroke="#ef4444"
-                strokeWidth="5"
+                stroke="currentColor"
+                strokeWidth="3"
                 strokeLinecap="round"
-                strokeDasharray={2 * Math.PI * 23}
-                strokeDashoffset={(1 - ((initialSeconds - timeLeft) / initialSeconds)) * (2 * Math.PI * 23)}
-                style={{ transition: 'stroke-dashoffset 0.3s linear' }}
+                strokeDasharray={2 * Math.PI * 17}
+                strokeDashoffset={(1 - ((initialSeconds - timeLeft) / initialSeconds)) * (2 * Math.PI * 17)}
+                style={{ transition: 'stroke-dashoffset 0.5s linear' }}
               />
             </svg>
-            <div className="khqr-timer-text">
-              {String(minutes).padStart(2, '0')}<span className="khqr-timer-unit">mn</span><br />
-              {seconds.toString().padStart(2, '0')}<span className="khqr-timer-unit">ss</span>
+            <span className="khqr-timer-text">
+              {String(minutes).padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
+            </span>
+          </div>
+
+          {/* Red Header Bar */}
+          <div className="khqr-header-bar">
+            <div className="bar-handle"></div>
+          </div>
+
+          {/* KHQR Logo Area */}
+          <div className="khqr-logo-area">
+            <img src="https://checkout.payway.com.kh/images/khqr-icon.svg" alt="KHQR" />
+          </div>
+
+          {/* Corner Triangle */}
+          <div className="khqr-corner">
+            <div className="corner-triangle"></div>
+          </div>
+
+          {/* Merchant Info */}
+          <div className="khqr-merchant">
+            <div className="info">
+              <div className="store-name" id="merchantName">{merchant_name}</div>
+              <div className="price-wrap">
+                <span id="priceDisplay">{displayAmount}</span>
+                <span className="price-usd" id="currencyDisplay">{currency}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="khqr-divider"></div>
+          {/* Divider */}
+          <div className="khqr-divider"></div>
 
-        <div className="khqr-qr-area">
-          <div className="qr-wrap">
-            <canvas ref={qrRef} id="qrcode" width="280" height="280" />
+          {/* QR Code Area */}
+          <div className="khqr-qr-area">
+            <div className="qr-wrap">
+              <canvas ref={qrRef} id="qrcode" width="220" height="220" />
+              <img src="https://checkout.payway.com.kh/images/usd-khqr-logo.svg" className="qr-logo-overlay" alt="" />
+            </div>
           </div>
-        </div>
 
-        <div className="khqr-bottom">
-          <div className="scan-text">Scan to Pay</div>
-          <div className="or-text">or</div>
-          <div className="dl-btn-wrap">
-            <button className="dl-btn" onClick={handleDownloadQR}>
-              <img src="https://checkout.payway.com.kh/images/download-icon-khqr.svg" alt="" />
-              <span>Download QR</span>
+          {/* Bottom Area */}
+          <div className="khqr-bottom">
+            <div className="scan-text">{t('khqr.scanToPay')}</div>
+            <div className="or-text">{t('khqr.or')}</div>
+            <div className="dl-btn-wrap">
+              <button className="dl-btn" onClick={handleDownloadCard} disabled={downloading}>
+                <img src="https://checkout.payway.com.kh/images/download-icon-khqr.svg" alt="" />
+                <span>{downloading ? (lang === 'km' ? 'កំពុងទាញយក...' : 'Downloading...') : t('khqr.downloadQR')}</span>
+              </button>
+            </div>
+            <div className="hint-text">
+              {lang === 'km'
+                ? 'និងផ្ទុកឡើងទៅកម្មវិធីធនាគារចល័តដែលគាំទ្រ KHQR'
+                : 'and upload to Mobile Banking app supporting KHQR'}
+            </div>
+
+            {/* Cancel Link */}
+            <button className="cancel-link" onClick={handleCancel} type="button">
+              {t('khqr.cancel')}
             </button>
           </div>
-          <div className="hint-text">Download the QR image then upload/scan it in your bank's app for best results</div>
-          
-          <button className="cancel-link" onClick={handleCancel} type="button">
-            Cancel Payment
-          </button>
-
-          {/* Download full styled card (QR area inside is clean + high reliability) */}
-          <button 
-            onClick={handleDownloadCardImage}
-            className="mt-2 w-full flex items-center justify-center gap-2 py-2 text-sm text-[#0bbcd4] hover:underline"
-            type="button"
-          >
-            <Download className="w-4 h-4" />
-            Download Card as Image (for printing/sharing)
-          </button>
-
-          <p className="text-[10px] text-center text-gray-400 mt-1 px-2">
-            Best for banks: tap "Download QR" (high-res clean image, no logo over code)
-          </p>
-
-          {/* If backend provided an official safe KHQR image (from bakong-v2), offer it as trusted download */}
-          {qr_image && (
-            <button
-              onClick={() => {
-                const link = document.createElement('a');
-                link.download = `khqr-official-${(merchant_name || 'payment').toLowerCase().replace(/\s+/g, '-')}-${currency}.png`;
-                link.href = qr_image;
-                link.click();
-              }}
-              className="mt-1 w-full flex items-center justify-center gap-2 py-1.5 text-xs text-emerald-600 hover:underline"
-              type="button"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Download Official Safe KHQR Image (recommended)
-            </button>
-          )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

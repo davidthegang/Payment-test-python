@@ -2,16 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Keep some project base styles */
 :root {
-  font-family: 'Roboto', 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Battambang', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   margin: 0;
-  background: #f0f2f5;
+  padding: 0;
+  background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 50%, #fef2f2 100%);
+  min-height: 100vh;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Selection color */
+::selection {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Smooth transitions for all interactive elements */
+a, button, input, select {
+  transition: all 0.2s ease;
 }
